@@ -50,15 +50,15 @@ function mqttColorlightAccessory(log, config) {
         .on('get', this.getStatus.bind(this))
         .on('set', this.setStatus.bind(this));
 
-    this.service.addCharacteristic(new Characteristic.Brightness())
+    var bc = this.service.addCharacteristic(new Characteristic.Brightness())
         .on('get', this.getBrightness.bind(this))
         .on('set', this.setBrightness.bind(this));
 
-    this.service.addCharacteristic(new Characteristic.Saturation())
+    var sc = this.service.addCharacteristic(new Characteristic.Saturation())
         .on('get', this.getSaturation.bind(this))
         .on('set', this.setSaturation.bind(this));
 
-    this.service.addCharacteristic(new Characteristic.Hue())
+    var hc = this.service.addCharacteristic(new Characteristic.Hue())
         .on('get', this.getHue.bind(this))
         .on('set', this.setHue.bind(this));
 
@@ -83,11 +83,32 @@ function mqttColorlightAccessory(log, config) {
                 var parts = message.toString().split(",");
                 if (parts.length > 0) {
                     this.log('COLOR IN MQTT: ' + parts[0]);
-                    this.log('COLOR in Kelvin:' + this.color);
-                    //this.color = parts[0];
-                }
 
-                //this.service.getCharacteristic(ColorCharacteristic).setValue(this.color, undefined, 'fromSetValue');
+                    var r = parseInt(parts[0].substr(1, 2), 16);
+                    var g = parseInt(parts[0].substr(3, 2), 16);
+                    var b = parseInt(parts[0].substr(5, 2), 16);
+                    this.log(`RGB: ${r} ${g} ${b}`)
+
+                    var colorParts = this._rgbToHsl(r, g, b);
+                    if (colorParts && colorParts.length > 2) {
+
+                        if (this.cache.hue != colorParts[0] && !isNaN(colorParts[0])) {
+                            this.cache.hue = colorParts[0];
+                            hc.setValue(this.cache.hue, undefined, 'fromSetValue');
+                            this.log('HUE: ' + this.cache.hue);
+                        }
+                        if (this.cache.saturation != colorParts[1] && !isNaN(colorParts[1])) {
+                            this.cache.saturation = colorParts[1];
+                            sc.setValue(this.cache.saturation, undefined, 'fromSetValue');
+                            this.log('SATURATION: ' + this.cache.saturation);
+                        }
+                        if (this.cache.brightness != colorParts[2] && !isNaN(colorParts[2])) {
+                            this.cache.brightness = colorParts[2];
+                            bc.setValue(this.cache.brightness, undefined, 'fromSetValue');
+                            this.log('BRIGHTNESS: ' + this.cache.brightness);
+                        }
+                    }
+                }
                 break;
         }
     });
@@ -185,6 +206,7 @@ mqttColorlightAccessory.prototype.getServices = function() {
  * @param {function} callback The callback that handles the response.
  */
 mqttColorlightAccessory.prototype._setRGB = function(callback) {
+    this.log(`HSB: ${this.cache.hue}, ${this.cache.saturation}, ${this.cache.brightness}`)
     var rgb = this._hsvToRgb(this.cache.hue, this.cache.saturation, this.cache.brightness);
     var r = this._decToHex(rgb.r);
     var g = this._decToHex(rgb.g);
