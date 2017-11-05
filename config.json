@@ -1,0 +1,25 @@
+{
+    "bridge": {
+        "name": "Homebridge",
+        "username": "CC:22:3D:E3:CE:30",
+        "port": 51826,
+        "pin": "031-45-154"
+    },
+
+    "description": "This is an example configuration file. You can use this as a template for creating your own configuration file.",
+
+    "platforms": [],
+
+    "accessories": [{
+        "accessory": "mqtt-colorlight",
+        "name": "homebridge-mqtt-colorlight",
+        "url": "mqtt://127.0.0.1",
+        "username": "xxxxxxx",
+        "password": "xxxxxxx",
+        "caption": "homebridge-mqtt-colorlight",
+        "topics": {
+            "get": "bar/state/light1/",
+            "set": "bar/set/light2/"
+        }
+    }]
+}
